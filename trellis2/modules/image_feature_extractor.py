@@ -83,7 +83,9 @@ class DinoV3FeatureExtractor:
         hidden_states = self.model.embeddings(image, bool_masked_pos=None)
         position_embeddings = self.model.rope_embeddings(image)
 
-        for i, layer_module in enumerate(self.model.layer):
+        # transformers >= 5 moved the blocks into DINOv3ViTModel.model (DINOv3ViTEncoder)
+        layers = self.model.layer if hasattr(self.model, 'layer') else self.model.model.layer
+        for i, layer_module in enumerate(layers):
             hidden_states = layer_module(
                 hidden_states,
                 position_embeddings=position_embeddings,
