@@ -46,15 +46,28 @@ Other options:
     --fit icp          after generating: small fit (scale, turn about up, shift) onto the LoD2, worst 20 % ignored
     --overwrite        redo results that exist (else skipped: a stopped job goes on where it was)
     --export-only      only export the meshes kept in <out>/_meshes (after a failed export)
+    --restarts 3       after a CUDA driver error / GPU reset ("device not ready", "illegal memory access" ...)
+                       the process can't use the GPU any more, so the script starts itself again in a fresh
+                       process (up to 3 times) and goes on with the jobs not done yet; a job that breaks the
+                       GPU twice is skipped. 0 = stop at the first such error.
+
+GPU memory: the script uses PyTorch's plain allocator instead of "expandable_segments" (which TRELLIS.2 and
+trellis2_batch.py turn on): under WSL2 its cuMemMap calls can fail with "CUDA driver error: device not ready".
+To get it back anyway: PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python trellis_lod2.py ...
 Then as for every model: python lowpoly.py <result>.glb (Pixal3D folder) for the light version.
 
 Needs the stage-1 ENCODER of TRELLIS (microsoft/TRELLIS-image-large, MIT, 119 MB, downloaded on the first run);
 TRELLIS.2's own stage-1 decoder already comes from that repo.
 """
+import os
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:512,garbage_collection_threshold:0.8")
+
 import argparse
 import json
 import re
+import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -69,8 +82,36 @@ FILL = 0.95            # longest side of the building in TRELLIS' unit cube (tra
                        # at the sides so the generator can add relief there too)
 
 
+RESTART_CODE = 75     # child -> supervisor: "this process' CUDA context is broken, start a new one"
+MAX_GPU_TRIES = 2     # a job that breaks the GPU this often in one run is skipped
+CURRENT = {"stem": None}
+
+
 def log(*a):
     print(*a, flush=True)
+
+
+def is_cuda_fatal(e):
+    """a CUDA error that is not "out of memory": the process' CUDA context is broken, only a new process helps"""
+    s = str(e)
+    return isinstance(e, RuntimeError) and "out of memory" not in s.lower() and any(
+        k in s for k in ("CUDA driver error", "CUDA error", "CUBLAS_STATUS", "cuDNN error", "CUDNN_STATUS"))
+
+
+def gpu_fails():
+    f = os.environ.get("TRELLIS_LOD2_FAILS")
+    try:
+        return json.loads(Path(f).read_text()) if f else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def gpu_fail_add(stem):
+    f = os.environ.get("TRELLIS_LOD2_FAILS")
+    if f and stem:
+        d = gpu_fails()
+        d[stem] = d.get(stem, 0) + 1
+        Path(f).write_text(json.dumps(d))
 
 
 # ----------------------------------------------------------------------------- photo
@@ -545,6 +586,8 @@ def main():
     ap.add_argument("--tex", type=int, default=None)
     ap.add_argument("--remesh", default="auto", choices=["auto", "on", "off"])
     ap.add_argument("--max-tokens", type=int, default=49152)
+    ap.add_argument("--restarts", type=int, default=3,
+                    help="fresh processes after a CUDA driver error / GPU reset (0 = off)")
     ap.add_argument("--no-fallback", action="store_true", help="no retry at 512 when the GPU runs out of memory")
     ap.add_argument("--name", help="name of the results (default: the LoD2 file's name without _lod2)")
     ap.add_argument("--out", default=str(HERE / "glb" / "lod2"))
@@ -565,6 +608,10 @@ def main():
         if getattr(a, k, None) is None:
             setattr(a, k, v)
     follows = [float(np.clip(f, 0, 1)) for f in a.follow]
+    t0 = float(os.environ.get("TRELLIS_LOD2_T0", "inf"))      # start of this run (set by supervise())
+
+    def done(f):         # result there - and with --overwrite: made in this run (by an earlier, restarted process)
+        return f.exists() and (not a.overwrite or f.stat().st_mtime >= t0)
 
     t_all = time.time()
     lod2 = Path(a.lod2).resolve()
@@ -591,10 +638,13 @@ def main():
                 stem = f"{name}_trellis_f{int(round(fo * 100)):03d}_{tag}_s{seed}"
                 if a.preview:
                     jobs.append((p, tag, fo, seed, stem))
-                elif (out / f"{stem}.glb").exists() and not a.overwrite:
+                elif done(out / f"{stem}.glb"):
                     log(f"  {stem}.glb: already there, skipped (--overwrite to redo)")
-                elif (mesh_dir / f"{stem}.pt").exists() and not a.overwrite:
+                elif done(mesh_dir / f"{stem}.pt"):
                     log(f"  {stem}: mesh already generated, only exporting it")
+                elif gpu_fails().get(stem, 0) >= MAX_GPU_TRIES:
+                    log(f"  {stem}: broke the GPU {MAX_GPU_TRIES}x in this run, skipped "
+                        f"(try it alone later, e.g. with --res 512)")
                 else:
                     jobs.append((p, tag, fo, seed, stem))
     if a.export_only:
@@ -654,6 +704,7 @@ def main():
 
             for _, _, fo, seed, stem in pjobs:
                 t1 = time.time()
+                CURRENT["stem"] = stem
                 lvl = "exact LoD2 cells" if fo >= 1 else ("no LoD2" if fo <= 0 else
                                                           f"start at noise {noise_level(fo)[1]:.2f}")
                 log(f"[{stem}] follow {fo:g} ({lvl}), seed {seed}  (started {time.strftime('%H:%M')})")
@@ -697,6 +748,7 @@ def main():
                     tb.free_gpu()
                     log(f"  OOM at {res} in {where} ({tb.gpu_free_gb():.1f} GB GPU free)"
                         + ("; retrying at 512" if res != resolutions[-1] else "; giving up on this one"))
+                CURRENT["stem"] = None
         del pipe, enc
         tb.free_gpu()
     if a.preview:
@@ -729,5 +781,50 @@ def main():
     log(f"done in {(time.time() - t_all) / 60:.1f} min -> {out}")
 
 
+def run_child():
+    """main(); a fatal CUDA error ends this process with RESTART_CODE so that supervise() starts a fresh one"""
+    try:
+        main()
+        return 0
+    except Exception as e:
+        tb = sys.modules.get("trellis2_batch")
+        if not (os.environ.get("TRELLIS_LOD2_CHILD") and is_cuda_fatal(e)) or "--preview" in sys.argv:
+            raise
+        where = tb.where_failed(e) if tb else f"{type(e).__name__}: {str(e)[:160]}"   # full traceback -> errors.log
+        stem = CURRENT["stem"]
+        gpu_fail_add(stem)
+        log(f"  GPU ERROR{' in ' + stem if stem else ''}: {where}")
+        log("  this process can't use the GPU any more (CUDA context broken)")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(RESTART_CODE)        # no normal shutdown: freeing CUDA memory can hang on a broken context
+
+
+def supervise():
+    """run main() in a child process; after a fatal CUDA error (driver error, GPU reset) start a fresh one,
+    which goes on with the jobs not done yet. The supervisor itself never touches the GPU."""
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--restarts", type=int, default=3)
+    restarts = max(0, pre.parse_known_args()[0].restarts)
+    fd, fails = tempfile.mkstemp(prefix="trellis_lod2_", suffix=".json")
+    os.close(fd)
+    env = dict(os.environ, TRELLIS_LOD2_CHILD="1", TRELLIS_LOD2_T0=repr(time.time()), TRELLIS_LOD2_FAILS=fails)
+    cmd = [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]]
+    try:
+        for n in range(restarts + 1):
+            code = subprocess.call(cmd, env=env)
+            if code != RESTART_CODE:
+                return code
+            if n < restarts:
+                log(f"===== starting again in a fresh process in 15 s (restart {n + 1}/{restarts}) =====")
+                time.sleep(15)            # give the driver a moment after a GPU reset
+        log(f"stopped: still GPU errors after {restarts} restarts - see errors.log")
+        return 1
+    except KeyboardInterrupt:
+        return 130
+    finally:
+        Path(fails).unlink(missing_ok=True)
+
+
 if __name__ == "__main__":
-    main()
+    sys.exit(run_child() if os.environ.get("TRELLIS_LOD2_CHILD") else supervise())
