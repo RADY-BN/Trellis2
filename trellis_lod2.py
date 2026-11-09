@@ -54,7 +54,7 @@ Other options:
 GPU memory: the script uses PyTorch's plain allocator instead of "expandable_segments" (which TRELLIS.2 and
 trellis2_batch.py turn on): under WSL2 its cuMemMap calls can fail with "CUDA driver error: device not ready".
 To get it back anyway: PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python trellis_lod2.py ...
-Then as for every model: python lowpoly.py <result>.glb (Pixal3D folder) for the light version.
+Then as for every model: blender_lowpoly.py on <result>.glb for the light version.
 
 Needs the stage-1 ENCODER of TRELLIS (microsoft/TRELLIS-image-large, MIT, 119 MB, downloaded on the first run);
 TRELLIS.2's own stage-1 decoder already comes from that repo.

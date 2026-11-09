@@ -19,7 +19,7 @@ Run it with Blender's own exe (no extra packages needed), from the TRELLIS.2 fol
   ... -- glb\\high                         all .glb files in that folder
   ... -- house.glb --error 0.001           stricter: more triangles, closer to the original
   ... -- house.glb --error 0.005           looser: fewer triangles
-  ... -- house.glb --low my_low.glb        bake only: use your own low poly (made by hand or by lowpoly.py)
+  ... -- house.glb --low my_low.glb        bake only: use your own low poly (made by hand)
 
 Output: <input folder>\\lowpoly_blender\\<name>.glb  (textures inside the glb). Existing results are skipped
 unless --overwrite, so a folder run can be restarted.

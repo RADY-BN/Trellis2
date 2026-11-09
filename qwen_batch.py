@@ -111,7 +111,7 @@ def find_buildings(raw):
     return {k: (v[0], v[1]) for k, v in found.items()}
 
 
-SKIP = ("next, in WSL", "check that every building sits", "look at the views in")   # qwen_views' Pixal3D hints
+SKIP = ("next, in WSL", "check that every building sits", "look at the views in")   # qwen_views' own hints
 
 
 def run_quiet_hints(cmd):
@@ -149,9 +149,9 @@ def main():
     ap.add_argument("--only", nargs="+", help="only these buildings (names as --list shows them)")
     ap.add_argument("--list", action="store_true", help="only show buildings, photos and angles")
     a, passthrough = ap.parse_known_args()
-    for bad in ("--clean", "--name", "--out", "--hint", "--flat", "--sheet", "--level"):
+    for bad in ("--clean", "--name", "--out", "--hint"):
         if bad in passthrough:
-            sys.exit(f"{bad} is set by qwen_batch.py itself (for other modes run qwen_views.py directly)")
+            sys.exit(f"{bad} is set by qwen_batch.py itself")
 
     raw, out = Path(a.raw).resolve(), Path(a.clean_dir).resolve()
     qv = HERE / "qwen_views.py"
