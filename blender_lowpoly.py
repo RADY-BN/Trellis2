@@ -6,10 +6,12 @@ move away from the original surface by more than --error. Flat walls go first, s
 with few triangles and a detailed church keeps more. Then it makes new UVs and bakes color + normal map
 (optionally roughness) from the original, exactly like doing it by hand (Cycles, Selected to Active).
 
-Repairs (generated models need them): every triangle is turned to face outward (TRELLIS output has
-about half of them facing inward - with a one-sided material, as in Unreal, those show as holes),
-the generator's holes are closed with patches painted from their surroundings, and triangles that
-reducing folded on top of each other are removed.
+Repair first (default): the original from the generator has gaps, cracks, open edges, loose flaps and
+inward-facing triangles. The script rebuilds it as one clean, closed surface (Remesh Sharp closes every
+gap, a voxel remesh makes it clean), reduces that, and paints the texture from the original. Where the
+original had a gap, the texture gets the colour of the nearest original surface. Every triangle faces
+outward, so it also works with one-sided materials (Unreal). --no-repair keeps the original's surface
+(then its holes are patched instead).
 
 Run it with Blender's own exe (no extra packages needed), from the TRELLIS.2 folder:
 
@@ -36,8 +38,9 @@ Main options
   --min-faces 300      never fewer
   --tex 4096           texture size (default: same as the original's biggest texture, at least 2048)
   --maps color normal roughness   which textures to bake (default: color normal)
-  --keep-holes         don't close the holes the original has (closed by default; the patches get the
-                       surrounding colour, and every face is turned outward)
+  --no-repair          don't rebuild; reduce the original surface itself (patches its holes)
+  --repair-depth 10    finer rebuild (default auto: cells about the allowed error; 10 = twice as fine)
+  --keep-holes         with --no-repair: don't patch the original's holes
   --smooth-angle 30    edges sharper than this stay sharp, the rest is shaded smooth
   --single-sided       one-sided material (default two-sided: generated models often have inward triangles)
   --blend              also save a .blend with original + low poly next to the glb, for checking
@@ -80,6 +83,10 @@ def parse_args():
                    help="use --error as given even if it is below the model's surface noise")
     p.add_argument("--planar", type=float, default=0.0, help="merge flat areas up to this angle first (deg)")
     p.add_argument("--keep-holes", action="store_true", help="don't close the holes of the original")
+    p.add_argument("--no-repair", action="store_true",
+                   help="don't rebuild a closed surface first (keeps the original's gaps and thin flaps)")
+    p.add_argument("--repair-depth", type=int, default=0,
+                   help="detail of the rebuilt surface: 9 = 460 cells across the model, 10 = 920 (0 = auto)")
     p.add_argument("--min-faces", type=int, default=300)
     p.add_argument("--max-faces", type=int, default=0)
     p.add_argument("--tex", type=int, default=0, help="texture size (0 = like the original, >= 2048)")
@@ -188,7 +195,6 @@ def setup_cycles(args):
 # ============================================================================ geometry
 
 FILL = 1   # material index that marks hole patches the script added (not part of the original surface)
-REPAINT_PATCHES = False
 
 
 def mesh_arrays(obj, evaluated=False, with_fill=False):
@@ -336,6 +342,47 @@ def clean_copy(high, name, size):
     me.materials.clear()
     clear_custom_normals(low)
     return low
+
+
+def remesh_repair(high, name, size, tol, depth=0):
+    """A clean, closed version of the original: Blender's Remesh (Sharp, octree dual contouring) closes
+    every gap, crack and open edge and drops zero-thickness flaps; a voxel remesh then makes it one
+    clean manifold surface. Cells are about the allowed error. Returns the object, cell size, depth."""
+    low = clean_copy(high, name, size)
+    if not depth:
+        depth = int(min(11, max(8, math.ceil(math.log2(size / (0.9 * 1.25 * tol))))))
+    mod = low.modifiers.new("repair", 'REMESH')
+    mod.mode = 'SHARP'
+    mod.octree_depth = depth
+    mod.scale = 0.9
+    mod.sharpness = 1.0
+    mod.use_remove_disconnected = False
+    try:
+        mod.use_smooth_shade = False
+    except AttributeError:
+        pass
+    apply_modifiers(low)
+    # dual contouring leaves tiny tunnels and edges shared by 3+ faces, which stop the reduction;
+    # a voxel remesh of the now closed shape makes one clean manifold surface
+    cell = size / (2 ** depth * 0.9)
+    vox = low.modifiers.new("clean", 'REMESH')
+    vox.mode = 'VOXEL'
+    vox.voxel_size = cell
+    vox.adaptivity = 0.0
+    try:
+        vox.use_smooth_shade = False
+    except AttributeError:
+        pass
+    apply_modifiers(low)
+    bm = bmesh.new()
+    bm.from_mesh(low.data)
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3],
+                          quad_method='BEAUTY', ngon_method='BEAUTY')
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(low.data)
+    bm.free()
+    low.data.update()
+    return low, cell, depth
 
 
 def clear_custom_normals(obj):
@@ -497,6 +544,7 @@ def orient_by_sight(obj, size, n_dirs=48):
     eps = size * 1e-4
     cast = tree.ray_cast
     score = np.zeros(len(bm.faces), np.int32)
+    seen = np.zeros(len(bm.faces), bool)
     for f in bm.faces:
         c, n = f.calc_center_median(), f.normal
         s = 0
@@ -507,6 +555,7 @@ def orient_by_sight(obj, size, n_dirs=48):
             side = 1 if dn > 0 else -1
             if cast(c + n * (eps * side), d)[0] is None:
                 s += side
+                seen[f.index] = True
         score[f.index] = s
     o = np.where(score < 0, -1, 1)
     known = score != 0
@@ -525,10 +574,32 @@ def orient_by_sight(obj, size, n_dirs=48):
     flip = [bm.faces[i] for i in np.nonzero(o < 0)[0]]
     if flip:
         bmesh.ops.reverse_faces(bm, faces=flip)
+    # whole pieces that no ray from outside reaches (inner shells, enclosed cavities) are dropped
+    comp = np.full(len(bm.faces), -1)
+    hidden = []
+    for f0 in bm.faces:
+        if comp[f0.index] >= 0:
+            continue
+        stack, members = [f0], []
+        comp[f0.index] = f0.index
+        while stack:
+            f = stack.pop()
+            members.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if comp[g.index] < 0:
+                        comp[g.index] = f0.index
+                        stack.append(g)
+        if not seen[[f.index for f in members]].any():
+            hidden += members
+    if hidden and len(hidden) < len(bm.faces):
+        bmesh.ops.delete(bm, geom=hidden, context='FACES')
+    else:
+        hidden = []
     bm.to_mesh(obj.data)
     bm.free()
     obj.data.update()
-    return len(flip) / max(len(o), 1), float((~(score != 0)).mean())
+    return len(flip) / max(len(o), 1), float((~seen).mean()), len(hidden)
 
 
 def orient_like(high, low, size):
@@ -847,76 +918,155 @@ def fix_inward_normals(img):
     return float(bad.mean())
 
 
-def uv_triangles(obj):
-    """UVs of every triangle (n x 3 x 2) and which triangles are hole patches."""
+def tri_uvs(obj):
+    """Per loop-triangle: vertex indices (n x 3), UVs (n x 3 x 2), material index (n)."""
     me = obj.data
-    uv = np.empty(len(me.loops) * 2, np.float32)
-    me.uv_layers.active.data.foreach_get("uv", uv)
     me.calc_loop_triangles()
-    L = np.empty(len(me.loop_triangles) * 3, np.int32)
+    n = len(me.loop_triangles)
+    T = np.empty(n * 3, np.int32)
+    me.loop_triangles.foreach_get("vertices", T)
+    L = np.empty(n * 3, np.int32)
     me.loop_triangles.foreach_get("loops", L)
-    M = np.empty(len(me.loop_triangles), np.int32)
+    M = np.empty(n, np.int32)
     me.loop_triangles.foreach_get("material_index", M)
-    return uv.reshape(-1, 2)[L.reshape(-1, 3)], M == FILL
+    uv = np.zeros((len(me.loops), 2), np.float32)
+    if me.uv_layers.active:
+        flat = np.empty(len(me.loops) * 2, np.float32)
+        me.uv_layers.active.data.foreach_get("uv", flat)
+        uv = flat.reshape(-1, 2)
+    return T.reshape(-1, 3), uv[L.reshape(-1, 3)], M
 
 
-def raster(tris, size, grow=0.0):
-    """Pixels (size x size, row 0 = bottom like Blender images) covered by UV triangles, grown by `grow` px."""
-    mask = np.zeros((size, size), bool)
-    for t in tris.astype(np.float64) * size - 0.5:
-        area = (t[1, 0] - t[0, 0]) * (t[2, 1] - t[0, 1]) - (t[2, 0] - t[0, 0]) * (t[1, 1] - t[0, 1])
-        if abs(area) < 1e-9:
-            continue
-        lo = np.floor(t.min(0) - grow).astype(int).clip(0, size - 1)
-        hi = np.ceil(t.max(0) + grow).astype(int).clip(0, size - 1)
-        xs, ys = np.meshgrid(np.arange(lo[0], hi[0] + 1), np.arange(lo[1], hi[1] + 1))
-        x, y = xs.ravel().astype(np.float64), ys.ravel().astype(np.float64)
-        inside = np.ones(len(x), bool)
-        for i in range(3):
-            a, b = t[i], t[(i + 1) % 3]
-            e = b - a
-            ln = math.hypot(e[0], e[1])
-            if ln > 1e-12:
-                inside &= (e[0] * (y - a[1]) - e[1] * (x - a[0])) / ln * math.copysign(1, area) >= -grow
-        mask[y[inside].astype(int), x[inside].astype(int)] = True
-    return mask
+def barycentric(P, A, B, C):
+    v0, v1, v2 = B - A, C - A, P - A
+    d00, d01, d11 = (v0 * v0).sum(-1), (v0 * v1).sum(-1), (v1 * v1).sum(-1)
+    d20, d21 = (v2 * v0).sum(-1), (v2 * v1).sum(-1)
+    den = d00 * d11 - d01 * d01
+    den = np.where(np.abs(den) < 1e-20, 1e-20, den)
+    b1 = (d11 * d20 - d01 * d21) / den
+    b2 = (d00 * d21 - d01 * d20) / den
+    W = np.stack([1 - b1 - b2, b1, b2], -1).clip(0, 1)
+    return W / np.maximum(W.sum(-1, keepdims=True), 1e-12)
 
 
-def push_pull(C, w):
-    """Fill pixels with weight 0 from the average of the nearest valid ones (image pyramid).
-    C = colour * weight."""
-    H, W = w.shape
-    if H < 2 or W < 2 or H % 2 or W % 2:
-        tot = float(w.sum())
-        avg = C.sum((0, 1)) / tot if tot > 0 else np.zeros(C.shape[2], np.float32)
-        return np.where(w[..., None] > 0, C / np.maximum(w, 1e-8)[..., None], avg).astype(np.float32)
-    C2 = C.reshape(H // 2, 2, W // 2, 2, -1).sum((1, 3))
-    w2 = w.reshape(H // 2, 2, W // 2, 2).sum((1, 3))
-    up = np.repeat(np.repeat(push_pull(C2, w2), 2, 0), 2, 1)
-    return np.where(w[..., None] > 0, C / np.maximum(w, 1e-8)[..., None], up).astype(np.float32)
+class SurfaceColour:
+    """The original's base colour at any point in space: nearest surface point -> its UV -> its image."""
+
+    def __init__(self, high):
+        me = high.data
+        V = np.empty(len(me.vertices) * 3, np.float32)
+        me.vertices.foreach_get("co", V)
+        self.V = V.reshape(-1, 3).astype(np.float64)
+        self.T, self.UV, self.M = tri_uvs(high)
+        self.tree = bvh(self.V, self.T)
+        self.images = {}
+        for slot_i, slot in enumerate(high.material_slots):
+            m = slot.material
+            bsdf = principled_of(m.node_tree) if m and m.use_nodes else None
+            if bsdf is None or not bsdf.inputs["Base Color"].links:
+                continue
+            node = bsdf.inputs["Base Color"].links[0].from_node
+            if node.type == 'TEX_IMAGE' and node.image and node.image.size[0] > 0:
+                w, h = node.image.size
+                px = np.empty(w * h * 4, np.float32)
+                node.image.pixels.foreach_get(px)
+                self.images[slot_i] = px.reshape(h, w, 4)
+
+    def distances(self, P):
+        return distances(self.tree, P)
+
+    def colour(self, P):
+        """RGB of the nearest original surface point for each point (nan where unknown)."""
+        idx = np.zeros(len(P), np.int64)
+        loc = np.zeros((len(P), 3))
+        near = self.tree.find_nearest
+        for i, p in enumerate(P.tolist()):
+            hit = near(p)
+            if hit[0] is not None:
+                idx[i], loc[i] = hit[2], hit[0]
+        tv = self.V[self.T[idx]]
+        W = barycentric(loc, tv[:, 0], tv[:, 1], tv[:, 2])
+        uv = (W[:, :, None] * self.UV[idx]).sum(1) % 1.0
+        out = np.full((len(P), 3), np.nan, np.float32)
+        for slot_i, img in self.images.items():
+            sel = self.M[idx] == slot_i
+            if sel.any():
+                h, w = img.shape[:2]
+                x = np.clip((uv[sel, 0] * w).astype(int), 0, w - 1)
+                y = np.clip((uv[sel, 1] * h).astype(int), 0, h - 1)
+                out[sel] = img[y, x, :3]
+        return out
 
 
-def repaint_patches(img, kind, patch, valid):
-    """Hole patches: the colour bake looked through the hole, i.e. the patch shows what the original
-    showed there (usually a dark gap) - kept. Only the normal map is made flat (the inside's bumps
-    would look wrong). REPAINT_PATCHES = True paints them from the surrounding surface instead."""
-    if kind != "normal" and not REPAINT_PATCHES:
-        return False
+def texels(tri_uv, size):
+    """Pixels (x, y) of a size x size image covered by one UV triangle, with barycentric weights."""
+    t = tri_uv.astype(np.float64) * size - 0.5
+    lo = np.floor(t.min(0) - 1).astype(int).clip(0, size - 1)
+    hi = np.ceil(t.max(0) + 1).astype(int).clip(0, size - 1)
+    xs, ys = np.meshgrid(np.arange(lo[0], hi[0] + 1), np.arange(lo[1], hi[1] + 1))
+    P = np.stack([xs.ravel(), ys.ravel()], 1).astype(np.float64)
+    v0, v1, v2 = t[1] - t[0], t[2] - t[0], P - t[0]
+    den = v0[0] * v1[1] - v1[0] * v0[1]
+    if abs(den) < 1e-9:
+        return xs.ravel()[:0], ys.ravel()[:0], np.zeros((0, 3))
+    b1 = (v2[:, 0] * v1[1] - v1[0] * v2[:, 1]) / den
+    b2 = (v0[0] * v2[:, 1] - v2[:, 0] * v0[1]) / den
+    W = np.stack([1 - b1 - b2, b1, b2], 1)
+    pad = 1.0 / max(1.0, np.abs(t[1:] - t[0]).max())        # about one pixel, so edges are covered
+    inside = (W >= -pad).all(1)
+    return xs.ravel()[inside], ys.ravel()[inside], W[inside].clip(0, 1)
+
+
+def surface_gaps(low, source, tex, near_limit):
+    """Texels of the low poly that sit away from the original surface (where the original had a gap,
+    a crack or an open bottom, or a flap the repair removed): pixel coords, 3D points, distances."""
+    me = low.data
+    V = np.empty(len(me.vertices) * 3, np.float32)
+    me.vertices.foreach_get("co", V)
+    V = V.reshape(-1, 3).astype(np.float64)
+    T, UV, _ = tri_uvs(low)
+    corners = V[T]
+    probes = np.concatenate([corners, corners.mean(1, keepdims=True),
+                             (corners + np.roll(corners, 1, 1)) / 2], 1)          # n x 7 x 3
+    d = source.distances(probes.reshape(-1, 3)).reshape(len(T), 7)
+    xs, ys, pts = [], [], []
+    for i in np.nonzero(d.max(1) > near_limit)[0]:
+        x, y, W = texels(UV[i], tex)
+        if len(x):
+            xs.append(x)
+            ys.append(y)
+            pts.append(W @ corners[i])
+    if not xs:
+        return None
+    x, y, P = np.concatenate(xs), np.concatenate(ys), np.concatenate(pts)
+    dist = source.distances(P)
+    far = dist > near_limit
+    return x[far], y[far], P[far], dist[far]
+
+
+def paint_gaps(img, kind, gaps, source, flat_beyond):
+    """Colour: what the original looks like right next to the gap (nearest surface point), not what
+    the bake saw through it. Normal map: flat where there is no original surface nearby."""
+    x, y, P, dist = gaps
     W = img.size[0]
     px = np.empty(len(img.pixels), np.float32)
     img.pixels.foreach_get(px)
     px = px.reshape(W, W, 4)
-    if kind == "normal":
-        px[patch, :3] = (0.5, 0.5, 1.0)
+    if kind == "color":
+        c = source.colour(P)
+        ok = ~np.isnan(c).any(1)
+        px[y[ok], x[ok], :3] = c[ok]
+    elif kind == "normal":
+        sel = dist > flat_beyond
+        px[y[sel], x[sel], :3] = (0.5, 0.5, 1.0)
     else:
-        w = valid.astype(np.float32)
-        px[patch, :3] = push_pull(px[..., :3] * w[..., None], w)[patch]
+        return False
     img.pixels.foreach_set(px.ravel())
     img.update()
     return True
 
 
-def bake_all(high, low, name, args, size, extrusion):
+def bake_all(high, low, name, args, size, extrusion, tol):
     tex = args.tex or min(8192, max(2048, biggest_texture(high)))
     margin = max(4, tex // 256)
     mat = bpy.data.materials.new(name)
@@ -926,11 +1076,12 @@ def bake_all(high, low, name, args, size, extrusion):
     bsdf = principled_of(nt)
     bsdf.inputs["Metallic"].default_value = 0.0
     bsdf.inputs["Roughness"].default_value = 0.8
-    patch = valid = None
-    uvt, fill = uv_triangles(low)
-    if fill.any():
-        patch = raster(uvt[fill], tex, grow=1.0)
-        valid = raster(uvt[~fill], tex) & ~patch
+    t = time.time()
+    source = SurfaceColour(high)
+    gaps = surface_gaps(low, source, tex, 0.5 * tol)
+    if gaps is not None:
+        log(f"  {len(gaps[0]):,} texels lie over gaps of the original or away from it: they get the colour "
+            f"of the nearest original surface ({time.time() - t:.0f}s)")
     low.data.polygons.foreach_set("material_index", np.zeros(len(low.data.polygons), np.int32))
     low.data.materials.clear()
     low.data.materials.append(mat)
@@ -951,7 +1102,7 @@ def bake_all(high, low, name, args, size, extrusion):
             bake_one(kind, high, low, nodes[kind], extrusion, margin)
         finally:
             restore(saved)
-        if patch is not None and repaint_patches(nodes[kind].image, kind, patch, valid):
+        if gaps is not None and paint_gaps(nodes[kind].image, kind, gaps, source, 2 * tol):
             nodes[kind].image.pack()
         log(f"  {kind}: {time.time() - t:.0f}s")
     links = nt.links
@@ -993,7 +1144,21 @@ def process(path, args):
     log(f"{name}: {len(T):,} tris, size {size:.3g}{' m' if metres else ''}, allowed error {unit(tol)}, bake on {device}")
 
     prepare_high(high, size, args.smooth_angle)
-    meter = ErrorMeter(high)
+    repaired = not args.low and not args.no_repair
+    if not args.low:
+        noise = surface_noise(*mesh_arrays(high))
+        if not args.strict and 3 * noise > tol:
+            log(f"surface noise (small ripple) {unit(noise)}: allowed error raised to {unit(3 * noise)} "
+                f"- below that the low poly would only copy the ripple; the normal map keeps it (--strict: don't)")
+            tol = 3 * noise
+    if repaired:
+        t = time.time()
+        low, cell, depth = remesh_repair(high, name, size, tol, args.repair_depth)
+        log(f"rebuilt as a closed surface (Remesh Sharp, depth {depth}, cells {unit(cell)}): "
+            f"{len(low.data.polygons):,} tris, gaps closed ({time.time() - t:.0f}s; --no-repair: keep original)")
+        meter = ErrorMeter(low)                         # reduce relative to the clean shape
+    else:
+        meter = ErrorMeter(high)
     if args.low:
         low = import_glb(os.path.abspath(args.low), name)
         align_low(low, high, size)
@@ -1004,13 +1169,9 @@ def process(path, args):
                 low.data.uv_layers.remove(low.data.uv_layers[0])
         e = meter.measure(*mesh_arrays(low))
     else:
-        low = clean_copy(high, name, size)
-        noise = surface_noise(*mesh_arrays(low))
-        if not args.strict and 3 * noise > tol:
-            log(f"surface noise (small ripple) {unit(noise)}: allowed error raised to {unit(3 * noise)} "
-                f"- below that the low poly would only copy the ripple; the normal map keeps it (--strict: don't)")
-            tol = 3 * noise
-        if not args.keep_holes:
+        if not repaired:
+            low = clean_copy(high, name, size)
+        if not args.keep_holes and not repaired:
             t = time.time()
             closed, left = fill_holes(low, size)
             if closed or left:
@@ -1021,9 +1182,9 @@ def process(path, args):
         if not args.keep_holes:
             fill_holes(low, size)                       # what reducing opened (removed folded bits)
         t = time.time()
-        flipped, unseen = orient_by_sight(low, size)
-        log(f"faces turned outward: {flipped * 100:.1f} % turned, {unseen * 100:.1f} % hidden inside "
-            f"({time.time() - t:.0f}s)")
+        flipped, unseen, dropped = orient_by_sight(low, size)
+        log(f"faces turned outward: {flipped * 100:.1f} % turned; {dropped:,} triangles of hidden inner "
+            f"parts removed ({time.time() - t:.0f}s)")
         smooth_by_angle(low, args.smooth_angle)
         hf = orient_like(high, low, size)
         smooth_by_angle(high, args.smooth_angle)
@@ -1037,7 +1198,7 @@ def process(path, args):
         unwrap(low, margin=0.003)
         log(f"new UVs: {time.time() - t:.0f}s")
     extrusion = min(max(2.0 * e[1], 0.002 * size), 0.05 * size)
-    bake_all(high, low, name, args, size, extrusion)
+    bake_all(high, low, name, args, size, extrusion, tol)
 
     export_glb(low, out)
     if args.blend:
