@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Blender files and PNG images
+*.blend
+*.blend[0-9]*
+*.png
+*.PNG
+*.glb
+
+# Generated models
+glb/
