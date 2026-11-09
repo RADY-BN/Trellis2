@@ -1,0 +1,216 @@
+## 2026-11-06 11:10  Screenshot_2026-11-06_104050_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104050.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:11  Screenshot_2026-11-06_104127_az045.png  seed 42  steps 4  cfg 1  1536x1152  clean  photos: Screenshot 2026-11-06 104127.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:12  Screenshot_2026-11-06_104238_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104238.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:12  Screenshot_2026-11-06_104302_az045.png  seed 42  steps 4  cfg 1  1552x1136  clean  photos: Screenshot 2026-11-06 104302.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:13  Screenshot_2026-11-06_104415_az045.png  seed 42  steps 4  cfg 1  1552x1136  clean  photos: Screenshot 2026-11-06 104415.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:14  Screenshot_2026-11-06_104458_az045.png  seed 42  steps 4  cfg 1  1536x1152  clean  photos: Screenshot 2026-11-06 104458.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:14  Screenshot_2026-11-06_104721_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104721.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:15  Screenshot_2026-11-06_104809_az045.png  seed 42  steps 4  cfg 1  1552x1136  clean  photos: Screenshot 2026-11-06 104809.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:16  Screenshot_2026-11-06_104855_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104855.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:16  Screenshot_2026-11-06_104942_az045.png  seed 42  steps 4  cfg 1  1552x1136  clean  photos: Screenshot 2026-11-06 104942.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 11:17  Screenshot_2026-11-06_105225_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 105225.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:25  done_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104050.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:26  Screenshot_2026-11-06_104855_az045.png  seed 42  steps 4  cfg 1  1536x1136  clean  photos: Screenshot 2026-11-06 104855.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:27  Screenshot_2026-11-06_131204_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131204.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:28  Screenshot_2026-11-06_131239_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131239.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:29  Screenshot_2026-11-06_131455_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131455.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:29  Screenshot_2026-11-06_131641_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131641.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:30  Screenshot_2026-11-06_131818_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131818.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:31  Screenshot_2026-11-06_131901_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131901.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:31  Screenshot_2026-11-06_131958_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 131958.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:32  Screenshot_2026-11-06_132009_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 132009.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:33  Screenshot_2026-11-06_132026_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 132026.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:33  Screenshot_2026-11-06_132102_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 132102.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
+## 2026-11-06 13:34  Screenshot_2026-11-06_132139_az045.png  seed 42  steps 4  cfg 1  1584x1120  clean  photos: Screenshot 2026-11-06 132139.png:45
+Clean up Picture 1 without changing its camera: keep exactly the same viewpoint, angle, height, perspective, framing and zoom, so the building stays at the same place and the same size in the picture. Do not rotate, move, zoom, straighten or re-frame the view.
+Keep only the main building in the centre of the picture, with everything that is built onto it: towers, spires, roofs, gables, dormers, chimneys, porches, stairs and side wings.
+Remove everything else: neighbouring buildings (cut them off cleanly where they touch it), map labels, pins, icons, text and logos, trees, bushes, grass, cars, people, signs, street lamps, poles, wires, fences, scaffolding, the ground, roads, squares, pavements, water and sky. Where something covered part of the building, continue its walls, windows and roof behind it.
+Keep the building exactly as it is: same shape and proportions, same number and positions of windows, doors, gables, towers, buttresses and dormers, same roof shapes, materials and colours.
+Pure white background all around. The building ends cleanly at its base and stands on nothing.
+Even soft daylight from all sides: no cast shadows on or around the building, no dark sides, no sun highlights.
+Sharp, clean detail: crisp stone, brick, plaster, roof tiles and window frames, straight edges; repair blurry or melted areas so they match the rest of the building. No blur, no noise, no text, no labels, no frame.
+
