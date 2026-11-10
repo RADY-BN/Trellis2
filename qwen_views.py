@@ -307,7 +307,7 @@ def main():
     p.add_argument("photos", nargs="+", help="photo.png:<angle>, a photo with az<angle> in its name, or a folder of those")
     p.add_argument("--name", help="building name for the files (default: the first photo's name)")
     p.add_argument("--out", help="output folder (default: photos_clean)")
-    p.add_argument("--clean", action="store_true", help=argparse.SUPPRESS)   # the only mode now; old commands still work
+    p.add_argument("--clean", action="store_true", help=argparse.SUPPRESS)   # accepted and ignored (qwen_batch.py passes it)
     p.add_argument("--hint", help="what the building is, e.g. 'the cathedral with the tall green spire' "
                                   "(helps when it touches other buildings)")
     p.add_argument("--views", type=float, nargs="+", help="only the photos at these angles")

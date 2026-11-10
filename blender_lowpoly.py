@@ -19,7 +19,7 @@ Run it with Blender's own exe (no extra packages needed), from the TRELLIS.2 fol
   ... -- glb\\high                         all .glb files in that folder
   ... -- house.glb --error 0.001           stricter: more triangles, closer to the original
   ... -- house.glb --error 0.005           looser: fewer triangles
-  ... -- house.glb --low my_low.glb        bake only: use your own low poly (made by hand)
+  ... -- house.glb --low my_low.glb        bake only: use your own low poly (made by hand or by lowpoly.py)
 
 Output: <input folder>\\lowpoly_blender\\<name>.glb  (textures inside the glb). Existing results are skipped
 unless --overwrite, so a folder run can be restarted.
@@ -50,6 +50,7 @@ Unreal: the normal map is glTF/OpenGL style. If details look lit from the wrong 
 texture and tick "Flip Green Channel".
 """
 import argparse
+import gc
 import math
 import os
 import sys
@@ -307,6 +308,22 @@ def smooth_by_angle(obj, angle):
     bm.to_mesh(obj.data)
     bm.free()
     obj.data.update()
+
+
+def split_sharp_edges(obj):
+    """Cut the mesh along its sharp edges. Blender's bake shoots its rays along the vertex normals,
+    which are averaged across sharp edges: on window reveals and corners the rays then run diagonally
+    and pick up the wall's colour (white bands beside windows). Split, every face bakes straight on.
+    The shading stays the same (those edges were sharp anyway), the glb has these splits anyway."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    sharp = [e for e in bm.edges if not e.smooth and len(e.link_faces) == 2]
+    if sharp:
+        bmesh.ops.split_edges(bm, edges=sharp)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+    return len(sharp)
 
 
 def prepare_high(high, size, smooth_angle):
@@ -970,7 +987,8 @@ class SurfaceColour:
                 w, h = node.image.size
                 px = np.empty(w * h * 4, np.float32)
                 node.image.pixels.foreach_get(px)
-                self.images[slot_i] = px.reshape(h, w, 4)
+                self.images[slot_i] = (px.reshape(h, w, 4)[..., :3] * 255 + 0.5).astype(np.uint8)
+                del px
 
     def distances(self, P):
         return distances(self.tree, P)
@@ -994,7 +1012,7 @@ class SurfaceColour:
                 h, w = img.shape[:2]
                 x = np.clip((uv[sel, 0] * w).astype(int), 0, w - 1)
                 y = np.clip((uv[sel, 1] * h).astype(int), 0, h - 1)
-                out[sel] = img[y, x, :3]
+                out[sel] = img[y, x] / 255.0
         return out
 
 
@@ -1012,53 +1030,95 @@ def texels(tri_uv, size):
     b1 = (v2[:, 0] * v1[1] - v1[0] * v2[:, 1]) / den
     b2 = (v0[0] * v2[:, 1] - v2[:, 0] * v0[1]) / den
     W = np.stack([1 - b1 - b2, b1, b2], 1)
-    pad = 1.0 / max(1.0, np.abs(t[1:] - t[0]).max())        # about one pixel, so edges are covered
+    pad = 2.5 / max(1.0, np.abs(t[1:] - t[0]).max())        # ~2 px past the edges: covers the bake's margin too
     inside = (W >= -pad).all(1)
     return xs.ravel()[inside], ys.ravel()[inside], W[inside].clip(0, 1)
 
 
-def surface_gaps(low, source, tex, near_limit):
-    """Texels of the low poly that sit away from the original surface (where the original had a gap,
-    a crack or an open bottom, or a flap the repair removed): pixel coords, 3D points, distances."""
+def surface_gaps(low, source, tex, near_limit, extrusion, deep_limit, window_size):
+    """Texels of the low poly that cover a real gap of the original (a hole, a crack, the open bottom,
+    a flap the repair removed): pixel coords and 3D points. A texel counts when the original surface is
+    more than near_limit away AND the bake ray (from extrusion outside, straight in) finds no original
+    surface within deep_limit behind it. Window and door recesses are not gaps: the ray meets the glass
+    or the door a little behind the wall, so those keep the baked texture."""
     me = low.data
     V = np.empty(len(me.vertices) * 3, np.float32)
     me.vertices.foreach_get("co", V)
     V = V.reshape(-1, 3).astype(np.float64)
     T, UV, _ = tri_uvs(low)
     corners = V[T]
+    fn = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
+    fn /= np.maximum(np.linalg.norm(fn, axis=1), 1e-20)[:, None]
     probes = np.concatenate([corners, corners.mean(1, keepdims=True),
                              (corners + np.roll(corners, 1, 1)) / 2], 1)          # n x 7 x 3
     d = source.distances(probes.reshape(-1, 3)).reshape(len(T), 7)
-    xs, ys, pts = [], [], []
+    wall = flat_walls(corners, fn, window_size)
+    xs, ys, pts, nrm, wl = [], [], [], [], []
     for i in np.nonzero(d.max(1) > near_limit)[0]:
         x, y, W = texels(UV[i], tex)
         if len(x):
             xs.append(x)
             ys.append(y)
             pts.append(W @ corners[i])
+            nrm.append(np.repeat(fn[i][None], len(x), 0))
+            wl.append(np.full(len(x), wall[i]))
     if not xs:
         return None
-    x, y, P = np.concatenate(xs), np.concatenate(ys), np.concatenate(pts)
-    dist = source.distances(P)
-    far = dist > near_limit
-    return x[far], y[far], P[far], dist[far]
+    x, y, P, N = np.concatenate(xs), np.concatenate(ys), np.concatenate(pts), np.concatenate(nrm)
+    wl = np.concatenate(wl)
+    far = source.distances(P) > near_limit
+    x, y, P, N, wl = x[far], y[far], P[far], N[far], wl[far]
+    cast = source.tree.ray_cast
+    deep = np.ones(len(P), bool)
+    for i, (p, n) in enumerate(zip(P.tolist(), N.tolist())):
+        o = (p[0] + n[0] * extrusion, p[1] + n[1] * extrusion, p[2] + n[2] * extrusion)
+        hit = cast(o, (-n[0], -n[1], -n[2]), extrusion + deep_limit)
+        deep[i] = hit[0] is None
+    if not deep.any():
+        return None
+    x, y, P, N, wl = x[deep], y[deep], P[deep], N[deep], wl[deep]
+    return x, y, P, N, wl
 
 
-def paint_gaps(img, kind, gaps, source, flat_beyond):
+def flat_walls(corners, fn, radius):
+    """Triangles lying in a flat, upright wall (3/4 of the surface within `radius` faces the same way).
+    A gap there is a window or door opening of the generated model: it keeps the dark look of the
+    original instead of being painted over like a crack in a roof or a junction."""
+    from mathutils.kdtree import KDTree
+    cen = corners.mean(1)
+    area = 0.5 * np.linalg.norm(np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0]), axis=1)
+    kd = KDTree(len(cen))
+    for i, c in enumerate(cen.tolist()):
+        kd.insert(c, i)
+    kd.balance()
+    wall = np.zeros(len(cen), bool)
+    for i, c in enumerate(cen.tolist()):
+        if abs(fn[i, 2]) > 0.35:                      # roofs, floors, sloped parts: not a wall
+            continue
+        idx = np.array([j for _, j, _ in kd.find_range(c, radius)])
+        m = (fn[idx] * area[idx, None]).sum(0)
+        m /= max(np.linalg.norm(m), 1e-20)
+        agree = fn[idx] @ m >= 0.95                   # small window reveals may face elsewhere
+        wall[i] = bool(fn[i] @ m >= 0.95 and area[idx][agree].sum() >= 0.75 * area[idx].sum())
+    return wall
+
+
+def paint_gaps(img, kind, gaps, source):
     """Colour: what the original looks like right next to the gap (nearest surface point), not what
-    the bake saw through it. Normal map: flat where there is no original surface nearby."""
-    x, y, P, dist = gaps
+    the bake saw through it - except in openings of flat walls (windows, doors): those keep what is seen
+    through them, like the original. Normal map: flat."""
+    x, y, P, N, wall = gaps
     W = img.size[0]
     px = np.empty(len(img.pixels), np.float32)
     img.pixels.foreach_get(px)
     px = px.reshape(W, W, 4)
     if kind == "color":
-        c = source.colour(P)
+        paint = ~wall
+        c = source.colour(P[paint])
         ok = ~np.isnan(c).any(1)
-        px[y[ok], x[ok], :3] = c[ok]
+        px[y[paint][ok], x[paint][ok], :3] = c[ok]
     elif kind == "normal":
-        sel = dist > flat_beyond
-        px[y[sel], x[sel], :3] = (0.5, 0.5, 1.0)
+        px[y, x, :3] = (0.5, 0.5, 1.0)
     else:
         return False
     img.pixels.foreach_set(px.ravel())
@@ -1078,10 +1138,11 @@ def bake_all(high, low, name, args, size, extrusion, tol):
     bsdf.inputs["Roughness"].default_value = 0.8
     t = time.time()
     source = SurfaceColour(high)
-    gaps = surface_gaps(low, source, tex, 0.5 * tol)
+    gaps = surface_gaps(low, source, tex, 0.5 * tol, extrusion, max(4 * tol, 0.015 * size),
+                        max(3 * tol, 0.015 * size))
     if gaps is not None:
-        log(f"  {len(gaps[0]):,} texels lie over gaps of the original or away from it: they get the colour "
-            f"of the nearest original surface ({time.time() - t:.0f}s)")
+        log(f"  texels over gaps of the original: {int((~gaps[4]).sum()):,} get the colour of the nearest "
+            f"surface, {int(gaps[4].sum()):,} in wall openings (windows) keep their look ({time.time() - t:.0f}s)")
     low.data.polygons.foreach_set("material_index", np.zeros(len(low.data.polygons), np.int32))
     low.data.materials.clear()
     low.data.materials.append(mat)
@@ -1102,9 +1163,10 @@ def bake_all(high, low, name, args, size, extrusion, tol):
             bake_one(kind, high, low, nodes[kind], extrusion, margin)
         finally:
             restore(saved)
-        if gaps is not None and paint_gaps(nodes[kind].image, kind, gaps, source, 2 * tol):
+        if gaps is not None and paint_gaps(nodes[kind].image, kind, gaps, source):
             nodes[kind].image.pack()
         log(f"  {kind}: {time.time() - t:.0f}s")
+    del source, gaps
     links = nt.links
     if "color" in nodes:
         links.new(nodes["color"].outputs["Color"], bsdf.inputs["Base Color"])
@@ -1193,11 +1255,15 @@ def process(path, args):
     log(f"low poly: {tris:,} tris ({tris / len(T) * 100:.1f} %), error 99 %: {unit(e[0])}, "
         f"99.9 %: {unit(e[1])}, mean {unit(e[2])}")
 
+    if not args.low:
+        split_sharp_edges(low)
     if not low.data.uv_layers:
         t = time.time()
         unwrap(low, margin=0.003)
         log(f"new UVs: {time.time() - t:.0f}s")
     extrusion = min(max(2.0 * e[1], 0.002 * size), 0.05 * size)
+    del meter                                           # free its search trees before baking
+    gc.collect()
     bake_all(high, low, name, args, size, extrusion, tol)
 
     export_glb(low, out)

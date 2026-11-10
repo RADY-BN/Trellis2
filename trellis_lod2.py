@@ -7,6 +7,7 @@ TRELLIS.2 works in stages:
   3. texture:     colour, roughness, metal - from the photo
 This script changes only stage 1: instead of starting from pure noise it starts from the LoD2 model with some noise
 added, so the result keeps the LoD2's size and layout but may round it off, add curves and small changes (--follow).
+With --follow 0 the shape is plain TRELLIS.2 from the photo and the LoD2 only gives the real size and place.
 Stages 2 and 3 are TRELLIS.2's own, untouched. The result is put back into the LoD2 model's frame (metres, Y up,
 ground at 0, front +Z), so <lod2>.json still says where it stands in the world.
 
@@ -14,12 +15,10 @@ WSL, trellis2 env, in the TRELLIS.2 folder (next to trellis2_batch.py, whose hel
 
     H=/mnt/c/Users/mbalooch/Desktop/Myfiles/Hunyuan3D/Hunyuan3D-2.1
     python trellis_lod2.py --check
-    python trellis_lod2.py $H/out/buildings/dom_lod2.glb $H/in/dom_corner/dom_az045.png --preview \
-           --follow 0.8 0.7 0.6 0.5 0.4 0.3
-        -> glb/lod2/dom_trellis_az045_fit.png + dom_trellis_f070_az045_s42_stage1.png ...
-           (stage 1 only, seconds each: look at them first and pick the --follow values you like)
-    python trellis_lod2.py $H/out/buildings/dom_lod2.glb $H/in/dom_corner/dom_az045.png --follow 0.7 0.6 0.5
-        -> glb/lod2/dom_trellis_f070_az045_s42.glb (+ .json, + _stage1.png), the same for 0.6 and 0.5
+    python trellis_lod2.py $H/out/buildings/dom_lod2.glb $H/in/dom_corner/dom_az045.png --follow 0
+        -> glb/lod2/dom_trellis_f000_az045_s42.glb (+ .json: where it stands in the world)
+    LoD2 as a shape guide: --preview --follow 0.7 0.5 (stage 1 only, seconds each, *_stage1.png) to look first,
+    then the same without --preview.
 
 --follow F (several allowed, default 0.7 0.6 0.5): how closely the rough shape follows the LoD2 model
 (= the share of TRELLIS' rough-shape steps taken from the LoD2 instead of generated)
@@ -29,10 +28,9 @@ WSL, trellis2 env, in the TRELLIS.2 folder (next to trellis2_batch.py, whose hel
     0.6   medium: layout and footprint kept, roofs / towers / corners may change
     0.5   loose: footprint mostly kept, the upper parts follow the photo (spires, roofs)
     0.3   only a hint
-    0.0   no LoD2 at all: plain TRELLIS.2 from the photo, only placed onto the LoD2 afterwards (to compare)
-    Measured on the Dom without a photo: 0.7 kept 97 % of the LoD2 cells, 0.55 kept 79 % and added 35 %; with the
-    photo the changes are bigger. The stage-1 pictures (*_stage1.png, also written for full runs) show it from
-    above, front and side: grey = LoD2 and result agree, red = LoD2 cell left out, blue = cell added.
+    0.0   no LoD2 shape: plain TRELLIS.2 from the photo, only placed onto the LoD2 afterwards (the usual choice)
+    The stage-1 pictures (*_stage1.png, also written for full runs) show it from above, front and side:
+    grey = LoD2 and result agree, red = LoD2 cell left out, blue = cell added.
 
 Turn (--yaw): TRELLIS.2 has no camera - it decides itself how the building stands in its grid. So the script first
 lets TRELLIS.2 build the rough shape from the photo alone (first seed) and turns the LoD2 model until it matches that
@@ -122,7 +120,7 @@ def angle_tag(stem):
 
 
 def white_key(img):
-    """building cut out of a PLAIN WHITE background (same as hy21_mv.white_key); None if the border is not white"""
+    """building cut out of a PLAIN WHITE background; None if the border is not white"""
     from PIL import Image
     from scipy.ndimage import binary_dilation, binary_propagation, label
     a = np.asarray(img.convert("RGB")).astype(np.int16)

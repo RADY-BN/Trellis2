@@ -1,5 +1,5 @@
 r"""
-qwen_batch.py - every photo in photos_raw -> a cleaned picture in photos_clean (Qwen, qwen_views.py --clean),
+qwen_batch.py - every photo in photos_raw -> a cleaned picture in photos_clean (Qwen, qwen_views.py),
 ready for TRELLIS. You do not have to give any angle: the script gives every photo one.
 
     1. Start ComfyUI (ImageGen\ComfyUI_windows_portable\run_nvidia_gpu.bat) and leave it open.
@@ -115,7 +115,7 @@ SKIP = ("next, in WSL", "check that every building sits", "look at the views in"
 
 
 def run_quiet_hints(cmd):
-    """run qwen_views.py, show its output live, but leave out its next-step hints for Pixal3D; returns exit code"""
+    """run qwen_views.py, show its output live, but leave out its next-step hints (this script prints its own); returns exit code"""
     import os
     env = dict(os.environ, PYTHONUNBUFFERED="1", PYTHONIOENCODING="utf-8")
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0, env=env)
