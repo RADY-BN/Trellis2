@@ -6,7 +6,8 @@ ready for TRELLIS. You do not have to give any angle: the script gives every pho
     2. Windows Python (not WSL), in the TRELLIS.2 folder:
            python qwen_batch.py
        -> photos_clean\<building>_az045.png for every building (the same camera as the photo, only the building
-          left, on white). Done pictures are skipped, so a stopped run goes on where it was.
+          left, on white, filling ~92 % of the picture's width or height). Done pictures are skipped, so a stopped
+          run goes on where it was.
     3. Close ComfyUI (frees the GPU), then in WSL:
            trellis -q high --in photos_clean                    every cleaned picture -> glb\high\
            python trellis_lod2.py <lod2.glb> photos_clean/<building>_az045.png --follow 0     with real size + place
@@ -17,6 +18,8 @@ What is one building:
     photos_raw\church_az045.png           loose photos with the same name and an angle (az...) = one building
     photos_raw\church_az135.png
     photos_raw\dom\*.png                  a folder = one building with several photos (name = folder name)
+    photos_raw\done\, photos_raw\_old\     skipped (a folder called done, or starting with _, is a place to park
+                                          photos already made; --raw photos_raw\done to make them again)
 
 Angles: from "az<degrees>" in the file name if it is there, else given here: 45, 135, 225, 315, 0, 90, 180, 270, ...
 in file-name order (screenshots: in the order you took them). For TRELLIS the angle is only a label in the name;
@@ -27,7 +30,13 @@ Hint (optional, when the building is not clearly the one in the middle or touche
 photo with the same name (photos_raw\church.txt), or hint.txt in a building's folder, e.g.
     the white high-rise hotel with the red sign in the middle
 
-Options (everything else is passed on to qwen_views.py, e.g. --seed 7 --overwrite --refs 2 --upscale --dry-run):
+Fit (qwen_views.py, on by default): Qwen first cleans the whole photo only to find the building, then cleans a
+crop around it at Qwen's own input size (~1 MP), so the building fills the picture: ~950-1250 px on its long side
+instead of 600-1000 and every pixel is building. About 1.3-1.5x the time of the old single run. --fill 0.85 for more
+margin, --no-fit for the old way.
+
+Options (everything else is passed on to qwen_views.py, e.g. --seed 7 --overwrite --refs 2 --fill 0.85 --no-fit
+--dry-run):
     --only church dom      only these buildings
     --list                 only show the buildings, their photos and angles
     --raw / --clean-dir    other folders (default photos_raw / photos_clean next to this script)
@@ -98,6 +107,9 @@ def find_buildings(raw):
 
     loose = {}
     for p in sorted(raw.iterdir(), key=lambda p: p.name.lower()):
+        if p.is_dir() and (p.name.lower() in PARKED or p.name.startswith("_")):
+            print(f"  ({p.name}\\ skipped: parked photos)")
+            continue
         if p.is_dir():
             files = sorted((f for f in p.iterdir() if f.is_file() and f.suffix.lower() in EXTS),
                            key=lambda f: f.name.lower())
@@ -111,7 +123,8 @@ def find_buildings(raw):
     return {k: (v[0], v[1]) for k, v in found.items()}
 
 
-SKIP = ("next, in WSL", "check that every building sits", "look at the views in")   # qwen_views' own hints
+SKIP = ("next, in WSL", "check that every building", "look at the views in")   # qwen_views' own hints
+PARKED = ("done",)                                # folders in photos_raw that are skipped (also any starting with _)
 
 
 def run_quiet_hints(cmd):

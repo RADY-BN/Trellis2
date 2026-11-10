@@ -16,6 +16,8 @@ Usage (from the repo root, inside the trellis2 conda env):
   python trellis2_batch.py --quality high        # photos_clean/ -> glb/high/
   python trellis2_batch.py -q high --export-only # redo the export of saved meshes only
 Any explicit flag (--res, --steps, --faces, --tex, --remesh) overrides the preset.
+Input: by default each photo's building is cut out at full resolution and scaled to fill a 1024 px
+square before TRELLIS sees it (TRELLIS would shrink the whole photo to 1024 px first). --no-fit: off.
 Low-poly: blender_lowpoly.py on the exported GLB.
 """
 import os
@@ -148,6 +150,45 @@ def use_rembg_model(name: str):
     rembg_mod.BiRefNet = _BiRefNetOverride
 
 
+FIT_SIZE = 1024  # TRELLIS.2 shrinks every input to 1024 px (longest side) before it crops to the object
+
+
+def fit_to_frame(pipe, image, fill):
+    """Cut the building out at full resolution and scale it so it fills a 1024 x 1024 transparent image.
+
+    TRELLIS.2 itself shrinks the WHOLE photo to 1024 px first and only then crops to the object: a
+    building covering 60 % of a 1550 px photo reaches the model at ~650 px. Cut out and scaled here,
+    it reaches the model at ~1000 px. The transparent background also skips TRELLIS' own cut-out.
+    Returns (image, building size in the photo, building size given to TRELLIS)."""
+    import numpy as np
+    from PIL import Image
+
+    img = image
+    alpha = np.asarray(img)[:, :, 3] if img.mode == "RGBA" else None
+    if alpha is None or (alpha == 255).all():
+        img = img.convert("RGB")
+        if getattr(pipe, "low_vram", False):
+            pipe.rembg_model.to(pipe.device)
+        img = pipe.rembg_model(img)               # BiRefNet at full resolution -> RGBA
+        if getattr(pipe, "low_vram", False):
+            pipe.rembg_model.cpu()
+        alpha = np.asarray(img)[:, :, 3]
+    ys, xs = np.nonzero(alpha > 0.8 * 255)        # the same threshold TRELLIS uses
+    if len(xs) == 0:
+        return image, 0, 0
+    x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+    side = max(x1 - x0, y1 - y0)
+    pad = max(2, int(0.02 * side))                # keep the soft edge of the cut-out
+    crop = img.crop((max(0, x0 - pad), max(0, y0 - pad), min(img.width, x1 + pad), min(img.height, y1 + pad)))
+    target = int(round(fill * FIT_SIZE))
+    s = target / (side + 2 * pad)
+    size = (max(1, round(crop.width * s)), max(1, round(crop.height * s)))
+    crop = crop.convert("RGBa").resize(size, Image.Resampling.LANCZOS).convert("RGBA")  # no colour fringes
+    canvas = Image.new("RGBA", (FIT_SIZE, FIT_SIZE), (0, 0, 0, 0))
+    canvas.paste(crop, ((FIT_SIZE - crop.width) // 2, (FIT_SIZE - crop.height) // 2))
+    return canvas, int(side), int(round(side * s))
+
+
 # ----------------------------------------------------------------------------- phase 1
 
 def pipeline_to_cpu(pipe):
@@ -189,6 +230,115 @@ def generate_one(pipe, image, res, a):
     return out
 
 
+def save_inputs_only(images, mesh_dir, a):
+    """Only cut out and fit the photos (BiRefNet, seconds), save them to <out>/_inputs/ - to check what
+    TRELLIS would get, without generating."""
+    from PIL import Image
+    import trellis2.pipelines.rembg as rembg_mod
+
+    if a.rembg:
+        use_rembg_model(a.rembg)
+    rembg = rembg_mod.BiRefNet()
+    rembg.cuda()
+    pipe = SimpleNamespace(rembg_model=rembg, low_vram=False, device="cuda")
+    out = mesh_dir.parent / "_inputs"
+    out.mkdir(exist_ok=True)
+    for img_path in images:
+        image, before, after = fit_to_frame(pipe, Image.open(img_path), a.fill)
+        image.save(out / f"{img_path.stem}.png")
+        print(f"input {img_path.name}: building {before} px -> {after} px, saved to {out / (img_path.stem + '.png')}")
+
+
+# Saved meshes are written into WSL's own disk first and then copied next to the output: torch.save straight
+# onto the Windows drive (/mnt/c) can fail ("PytorchStreamWriter failed writing file data/0") and leave a
+# broken .pt behind. A mesh that cannot be copied over stays in LOCAL_MESHES and is exported from there.
+LOCAL_MESHES = Path.home() / ".cache" / "trellis2_meshes"
+
+
+def local_dir(mesh_dir):
+    import hashlib
+    return LOCAL_MESHES / hashlib.md5(str(mesh_dir.resolve()).encode()).hexdigest()[:10]
+
+
+def mem_info():
+    try:
+        kv = {k: int(v.split()[0]) / 1e6 for k, v in (ln.split(":", 1) for ln in open("/proc/meminfo"))}
+        return f"{kv['MemAvailable']:.1f} GB RAM free, {kv['SwapFree']:.1f} GB swap free"
+    except (OSError, KeyError, ValueError):
+        return "RAM unknown"
+
+
+def disk_info(path):
+    import shutil
+    try:
+        return f"{shutil.disk_usage(path).free / 1e9:.0f} GB free on {path}"
+    except OSError:
+        return f"disk of {path} unknown"
+
+
+def mesh_ok(path):
+    """a saved mesh is a complete zip archive (torch.save); a failed save leaves a broken one"""
+    import zipfile
+    try:
+        return path.is_file() and path.stat().st_size > 1024 and zipfile.is_zipfile(path)
+    except OSError:
+        return False
+
+
+def find_mesh(mesh_dir, stem):
+    """the saved mesh of <stem>: next to the output, else in WSL's own disk; broken files are deleted"""
+    for path in (mesh_dir / f"{stem}.pt", local_dir(mesh_dir) / f"{stem}.pt"):
+        if mesh_ok(path):
+            return path
+        if path.exists():
+            print(f"     {path} is broken (its save did not finish): deleted, {stem} is generated again")
+            path.unlink(missing_ok=True)
+    return None
+
+
+def save_mesh(data, mesh_file):
+    """Save in WSL, copy over in pieces, rename at the end. Returns the path it is in, or None."""
+    import shutil
+    local = local_dir(mesh_file.parent) / mesh_file.name
+    local.parent.mkdir(parents=True, exist_ok=True)
+    sizes = sum(t.numel() * t.element_size() for t in data.values() if isinstance(t, torch.Tensor)) / 1e6
+    part = local.with_name(local.name + ".part")
+    try:
+        torch.save(data, part)
+        os.replace(part, local)
+    except Exception as e:
+        part.unlink(missing_ok=True)
+        print(f"     saving the mesh ({sizes:,.0f} MB) in WSL failed: {str(e).strip().splitlines()[-1][:160]}"
+              f" ({mem_info()}, {disk_info(local.parent)}); trying {mesh_file.parent}")
+        local = None
+    tmp = mesh_file.with_name(mesh_file.name + ".part")
+    try:
+        if local is not None:
+            with open(local, "rb") as src, open(tmp, "wb") as dst:
+                shutil.copyfileobj(src, dst, 16 * 1024 * 1024)      # 16 MB pieces
+        else:
+            torch.save(data, tmp)
+        os.replace(tmp, mesh_file)
+    except Exception as e:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        why = f"{str(e).strip().splitlines()[-1][:160]} ({mem_info()}, {disk_info(mesh_file.parent)})"
+        if local is None:
+            print(f"     could not save the mesh anywhere: {why}")
+            return None
+        try:
+            mesh_file.unlink(missing_ok=True)      # an older mesh there must not win over this one
+        except OSError:
+            pass
+        print(f"     could not copy the mesh to {mesh_file}: {why}\n     it stays in {local} and is exported from there")
+        return local
+    if local is not None:
+        local.unlink(missing_ok=True)
+    return mesh_file
+
+
 def generate_all(images, mesh_dir, a):
     from PIL import Image
     from trellis2.pipelines import Trellis2ImageTo3DPipeline
@@ -203,22 +353,34 @@ def generate_all(images, mesh_dir, a):
 
     for img_path in images:
         mesh_file = mesh_dir / f"{img_path.stem}.pt"
+        image = Image.open(img_path)
+        if a.fit:
+            image, before, after = fit_to_frame(pipe, image, a.fill)
+            if after:
+                print(f"fit  {img_path.name}: building {before} px in the photo -> {after} px for TRELLIS"
+                      f" (without --fit TRELLIS would see ~{int(before * min(1, 1024 / max(Image.open(img_path).size)))} px)")
+            if a.save_input:
+                (mesh_dir.parent / "_inputs").mkdir(exist_ok=True)
+                image.save(mesh_dir.parent / "_inputs" / f"{img_path.stem}.png")
         for res in resolutions:
             t0 = time.time()
             where = None
             try:
                 # RGBA input with a clean alpha skips the automatic background removal
-                v, f, attrs, coords, layout, voxel_size, raw = generate_one(pipe, Image.open(img_path), res, a)
+                v, f, attrs, coords, layout, voxel_size, raw = generate_one(pipe, image, res, a)
             except Exception as e:
                 if not is_oom(e):
                     raise
                 where = where_failed(e)
                 del e
             if where is None:
-                torch.save(dict(vertices=v, faces=f, attrs=attrs, coords=coords, layout=layout,
-                                voxel_size=voxel_size, res=res), mesh_file)
-                print(f"gen  {img_path.name}  {time.time() - t0:.0f}s  res={res}"
-                      f"  ({raw:,} raw faces -> {f.shape[0]:,} saved)")
+                saved = save_mesh(dict(vertices=v, faces=f, attrs=attrs, coords=coords, layout=layout,
+                                       voxel_size=voxel_size, res=res), mesh_file)
+                if saved is not None:
+                    print(f"gen  {img_path.name}  {time.time() - t0:.0f}s  res={res}"
+                          f"  ({raw:,} raw faces -> {f.shape[0]:,} saved)")
+                else:
+                    print(f"FAIL {img_path.name}: generated but not saved (see above), going on with the next photo")
                 del v, f, attrs, coords
                 free_gpu()
                 break
@@ -329,6 +491,15 @@ def main():
     p.add_argument("--no-fallback", action="store_true",
                    help="do not retry at 512 when the GPU runs out of memory at 1024/1536")
     p.add_argument("--seed", type=int, default=42, help="change it to get a different variation")
+    p.add_argument("--no-fit", dest="fit", action="store_false",
+                   help="give TRELLIS the photo as it is (by default the building is cut out at full "
+                        "resolution and scaled to fill a 1024 px square: ~50 %% more detail)")
+    p.add_argument("--fill", type=float, default=0.96,
+                   help="share of the 1024 px square the building fills (default 0.96)")
+    p.add_argument("--save-input", action="store_true",
+                   help="save the image TRELLIS gets to <out>/_inputs/ (to check the cut-out)")
+    p.add_argument("--inputs-only", action="store_true",
+                   help="only cut out + fit the photos and save them to <out>/_inputs/ (seconds, no generation)")
     p.add_argument("--model", default="microsoft/TRELLIS.2-4B")
     p.add_argument("--rembg", default="ZhengPeng7/BiRefNet",
                    help="background-removal model; 'briaai/RMBG-2.0' once you have access")
@@ -344,7 +515,8 @@ def main():
     ERROR_LOG = out_dir / "errors.log"
 
     if a.export_only:
-        todo = sorted(mesh_dir.glob("*.pt"))
+        stems = sorted({p.stem for d in (mesh_dir, local_dir(mesh_dir)) for p in d.glob("*.pt")})
+        todo = [m for m in (find_mesh(mesh_dir, s) for s in stems) if m is not None]
         if not todo:
             raise SystemExit(f"no saved meshes in '{mesh_dir}'")
     else:
@@ -358,17 +530,19 @@ def main():
         for img in images:
             if (out_dir / f"{img.stem}.glb").exists() and not a.overwrite:
                 print(f"skip {img.stem}.glb (exists, use --overwrite to redo)")
-            elif (mesh_dir / f"{img.stem}.pt").exists() and not a.overwrite:
+            elif not a.overwrite and find_mesh(mesh_dir, img.stem) is not None:
                 print(f"skip generating {img.name} (mesh already saved, exporting it)")
             else:
                 pending.append(img)
+        if a.inputs_only:
+            save_inputs_only(images, mesh_dir, a)
+            return
         print(f"quality={a.quality}: res={a.res} steps={a.steps} faces={a.faces} tex={a.tex}"
               f" | {len(pending)} image(s) to generate -> {out_dir}")
         if pending:
             generate_all(pending, mesh_dir, a)
-        todo = [mesh_dir / f"{img.stem}.pt" for img in images
-                if (mesh_dir / f"{img.stem}.pt").exists()
-                and (a.overwrite or not (out_dir / f"{img.stem}.glb").exists())]
+        todo = [m for m in (find_mesh(mesh_dir, img.stem) for img in images
+                            if a.overwrite or not (out_dir / f"{img.stem}.glb").exists()) if m is not None]
 
     for mesh_file in todo:
         out = out_dir / f"{mesh_file.stem}.glb"
@@ -379,7 +553,7 @@ def main():
             if not a.keep_mesh:
                 mesh_file.unlink()
         else:
-            print(f"FAIL {mesh_file.stem}: mesh kept in {mesh_dir}; close GPU-heavy apps and run again "
+            print(f"FAIL {mesh_file.stem}: mesh kept in {mesh_file.parent}; close GPU-heavy apps and run again "
                   f"with --export-only (add e.g. --faces 200000 --tex 2048 for a lighter export)")
 
 
